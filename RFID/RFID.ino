@@ -28,56 +28,68 @@ bool isInput = false;
 
 const char* api_key = "your_API_KEY";
 
+int currentMenu = 0;
+unsigned long previousMillis = 0;
+const long interval = 2000; // Interval pergantian menu 2 detik
+
 void setup() {
   Serial.begin(9600);
   lcd.init();
   lcd.backlight();
   RFID.begin(9600, SERIAL_8N1, 16, 17);
 
-  displayMenu();
+  displayMenu(currentMenu);
 }
 
 void loop() {
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    currentMenu = (currentMenu + 1) % 2;
+    displayMenu(currentMenu);
+  }
+
   char key = keypad.getKey();
   if (key) {
     handleMenuSelection(key);
   }
 }
 
-void displayMenu() {
+void displayMenu(int menu) {
   lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("1. Set WiFi");
-  lcd.setCursor(0, 1);
-  lcd.print("2. Reconnect API");
-  delay(2000);
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("3. Cek Saldo");
-  lcd.setCursor(0, 1);
-  lcd.print("4. Transaksi");
+  if (menu == 0) {
+    lcd.setCursor(0, 0);
+    lcd.print("1. Set WiFi");
+    lcd.setCursor(0, 1);
+    lcd.print("2. Reconnect API");
+  } else {
+    lcd.setCursor(0, 0);
+    lcd.print("3. Cek Saldo");
+    lcd.setCursor(0, 1);
+    lcd.print("4. Transaksi");
+  }
 }
 
 void handleMenuSelection(char key) {
   switch (key) {
     case '1':
-      settingWiFi();
+      if (currentMenu == 0) settingWiFi();
       break;
     case '2':
-      reconnectAPI();
+      if (currentMenu == 0) reconnectAPI();
       break;
     case '3':
-      cekSaldo();
+      if (currentMenu == 1) cekSaldo();
       break;
     case '4':
-      transaksi();
+      if (currentMenu == 1) transaksi();
       break;
     default:
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("Pilihan salah");
       delay(2000);
-      displayMenu();
+      displayMenu(currentMenu);
       break;
   }
 }
@@ -94,7 +106,7 @@ void settingWiFi() {
     lcd.setCursor(0, 0);
     lcd.print("Tidak ada WIFI");
     delay(2000);
-    displayMenu();
+    displayMenu(currentMenu);
     return;
   } else {
     for (int i = 0; i < n; ++i) {
@@ -143,7 +155,7 @@ void settingWiFi() {
     lcd.print("Gagal");
   }
   delay(2000);
-  displayMenu();
+  displayMenu(currentMenu);
 }
 
 int getNetworkSelection(int numNetworks) {
@@ -232,7 +244,7 @@ void reconnectAPI() {
     lcd.print("Not connected");
   }
   delay(2000);
-  displayMenu();
+  displayMenu(currentMenu);
 }
 
 void cekSaldo() {
@@ -241,7 +253,7 @@ void cekSaldo() {
   lcd.print("Cek Saldo...");
   // isian saldo
   delay(2000);
-  displayMenu();
+  displayMenu(currentMenu);
 }
 
 void transaksi() {
@@ -250,5 +262,5 @@ void transaksi() {
   lcd.print("Transaksi...");
   // isian transaksi
   delay(2000);
-  displayMenu();
+  displayMenu(currentMenu);
 }
