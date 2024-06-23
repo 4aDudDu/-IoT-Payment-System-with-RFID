@@ -125,7 +125,7 @@ void settingWiFi() {
   WiFi.begin(ssid.c_str(), password.c_str());
 
   int timeout = 0;
-  while (WiFi.status() != WL_CONNECTED && timeout < 20) { // Timeout setelah 10 detik
+  while (WiFi.status() != WL_CONNECTED && timeout < 20) { 
     delay(500);
     lcd.print(".");
     timeout++;
