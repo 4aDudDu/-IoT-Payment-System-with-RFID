@@ -4,7 +4,7 @@
 #include "Keypad.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <ArduinoJson.h> // Tambahkan ini
+#include <ArduinoJson.h> 
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 HardwareSerial RFID(2);
@@ -31,7 +31,7 @@ String api_key = "your_API_KEY";
 
 int currentMenu = 0;
 unsigned long previousMillis = 0;
-const long interval = 2000; // Interval pergantian menu 2 detik
+const long interval = 2000; 
 
 void setup() {
   Serial.begin(9600);
@@ -126,12 +126,12 @@ void settingWiFi() {
   String ssid = WiFi.SSID(selectedNetwork);
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Selected: " + ssid);
+  lcd.print(": " + ssid);
   delay(2000);
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Enter password:");
+  lcd.print("password:");
 
   String password = getPasswordInput();
 
