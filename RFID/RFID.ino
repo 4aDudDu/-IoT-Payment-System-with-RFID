@@ -4,46 +4,40 @@
 #include "Keypad.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <EEPROM.h>
+#include <ArduinoJson.h> // Tambahkan ini
 
-// LCD setup
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-
-// RFID setup
 HardwareSerial RFID(2);
 
-// Keypad setup
 const byte ROWS = 4;
 const byte COLS = 4;
+
 char keys[ROWS][COLS] = {
   { '1', '2', '3', 'A' },
   { '4', '5', '6', 'B' },
   { '7', '8', '9', 'C' },
   { '*', '0', '#', 'D' }
 };
+
 byte rowPins[ROWS] = { 19, 18, 5, 17 };
 byte colPins[COLS] = { 23, 32, 3, 33 };
+
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
-// Variables
 String nilai = "";
 bool isInput = false;
-String api_key = "";
-const int API_KEY_ADDRESS = 0; // EEPROM address to store API key
+
+String api_key = "your_API_KEY";
+
 int currentMenu = 0;
 unsigned long previousMillis = 0;
-const long interval = 2000;
+const long interval = 2000; // Interval pergantian menu 2 detik
 
 void setup() {
   Serial.begin(9600);
   lcd.init();
   lcd.backlight();
   RFID.begin(9600, SERIAL_8N1, 16, 17);
-
-  // Initialize EEPROM
-  EEPROM.begin(512);
-  // Retrieve stored API key from EEPROM
-  api_key = readAPIKey();
 
   displayMenu(currentMenu);
 }
@@ -157,9 +151,6 @@ void settingWiFi() {
   if (WiFi.status() == WL_CONNECTED) {
     lcd.setCursor(0, 0);
     lcd.print("Connected!");
-    if (api_key == "") {
-      generateAPIKey();
-    }
   } else {
     lcd.setCursor(0, 0);
     lcd.print("Gagal");
@@ -231,16 +222,38 @@ void reconnectAPI() {
     http.begin("https://oncard.id/app/api/device-manager/connect-device");
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    String postData = "api_key=" + api_key;
+    // Mendapatkan MAC Address
+    String macAddress = WiFi.macAddress();
+    String postData = "api_key=" + String(api_key) + "&mac_address=" + macAddress;
     int httpResponseCode = http.POST(postData);
 
     lcd.clear();
     if (httpResponseCode > 0) {
       String response = http.getString();
-      lcd.setCursor(0, 0);
-      lcd.print("Success!");
       Serial.println(httpResponseCode);
       Serial.println(response);
+
+      // Parsing response
+      DynamicJsonDocument doc(1024);
+      DeserializationError error = deserializeJson(doc, response);
+      if (error) {
+        lcd.setCursor(0, 0);
+        lcd.print("JSON error");
+        Serial.print("deserializeJson() failed: ");
+        Serial.println(error.c_str());
+      } else {
+        String message = doc["message"];
+        if (message == "Authorized") {
+          String newApiKey = doc["data"]["api_key"];
+          // Simpan API Key baru
+          lcd.setCursor(0, 0);
+          lcd.print("API Key updated!");
+          api_key = newApiKey;
+        } else {
+          lcd.setCursor(0, 0);
+          lcd.print("Authorization fail");
+        }
+      }
     } else {
       lcd.setCursor(0, 0);
       lcd.print("Failed!");
@@ -273,55 +286,4 @@ void transaksi() {
   // isian transaksi
   delay(2000);
   displayMenu(currentMenu);
-}
-
-void generateAPIKey() {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin("https://oncard.id/app/api/device-manager/connect-device");
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-
-    String postData = ""; // Add necessary parameters if any
-    int httpResponseCode = http.POST(postData);
-
-    lcd.clear();
-    if (httpResponseCode > 0) {
-      api_key = http.getString();
-      lcd.setCursor(0, 0);
-      lcd.print("API Key generated");
-      Serial.println(httpResponseCode);
-      Serial.println(api_key);
-      storeAPIKey(api_key); // Store the generated API key
-    } else {
-      lcd.setCursor(0, 0);
-      lcd.print("Failed to generate");
-      Serial.print("Error on sending POST request: ");
-      Serial.println(httpResponseCode);
-    }
-    http.end();
-  } else {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Not connected");
-  }
-  delay(2000);
-}
-
-void storeAPIKey(String key) {
-  for (int i = 0; i < key.length(); i++) {
-    EEPROM.write(API_KEY_ADDRESS + i, key[i]);
-  }
-  EEPROM.write(API_KEY_ADDRESS + key.length(), '\0'); // Null terminator
-  EEPROM.commit();
-}
-
-String readAPIKey() {
-  char key[100];
-  int i = 0;
-  while (i < 100) {
-    key[i] = EEPROM.read(API_KEY_ADDRESS + i);
-    if (key[i] == '\0') break;
-    i++;
-  }
-  return String(key);
 }
