@@ -263,4 +263,3 @@ void transaksi() {
   // isian transaksi
   delay(2000);
   displayMenu(currentMenu);
-}
