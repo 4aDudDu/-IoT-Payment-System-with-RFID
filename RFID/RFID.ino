@@ -27,7 +27,7 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 String nilai = "";
 bool isInput = false;
 
-String api_key = ""; // Belum ada API Key
+String api_key = ""; 
 
 int currentMenu = 0;
 unsigned long previousMillis = 0;
@@ -62,7 +62,7 @@ void displayMenu(int menu) {
     lcd.setCursor(0, 0);
     lcd.print("1. Set WiFi");
     lcd.setCursor(0, 1);
-    lcd.print("2. Reconnect API");
+    lcd.print("2. Generated API");
   } else {
     lcd.setCursor(0, 0);
     lcd.print("3. Cek Saldo");
@@ -120,7 +120,7 @@ void settingWiFi() {
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Masukan Pilihan Wifi");
+  lcd.print("WIFI : ");
   int selectedNetwork = getNetworkSelection(n);
 
   String ssid = WiFi.SSID(selectedNetwork);
@@ -131,7 +131,7 @@ void settingWiFi() {
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("password:");
+  lcd.print("Password:");
 
   String password = getPasswordInput();
 
@@ -176,11 +176,11 @@ int getNetworkSelection(int numNetworks) {
       } else {
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("Invalid selection");
+        lcd.print("Salah Input!");
         delay(2000);
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("Masukan Pilihan Wifi");
+        lcd.print("WIFI : ");
         input = "";
       }
     }
@@ -215,7 +215,7 @@ String getPasswordInput() {
 void reconnectAPI() {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Reconnect API...");
+  lcd.print("Generated API...");
 
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
@@ -225,7 +225,7 @@ void reconnectAPI() {
     // Mendapatkan MAC Address
     String macAddress = WiFi.macAddress();
     String postData = "mac_address=" + macAddress;
-    Serial.println("POST data: " + postData); // Debugging: print the POST data
+    Serial.println("POST data: " + postData); 
 
     int httpResponseCode = http.POST(postData);
 
@@ -245,7 +245,7 @@ void reconnectAPI() {
         Serial.println(error.c_str());
       } else {
         String message = doc["message"];
-        Serial.println("Message from server: " + message); // Debugging: print the message
+        Serial.println("Message from server: " + message); 
         if (message == "Authorized") {
           String newApiKey = doc["data"]["api_key"];
           // Simpan API Key baru
@@ -255,7 +255,7 @@ void reconnectAPI() {
         } else {
           lcd.setCursor(0, 0);
           lcd.print("Authorization fail");
-          Serial.println("Authorization failed: " + message); // Debugging: print the message
+          Serial.println("Authorization failed: " + message); 
         }
       }
     } else {
@@ -263,7 +263,7 @@ void reconnectAPI() {
       lcd.print("Failed!");
       Serial.print("Error on sending POST request: ");
       Serial.println(httpResponseCode);
-      Serial.println(http.errorToString(httpResponseCode)); // Debugging: print the error string
+      Serial.println(http.errorToString(httpResponseCode));
     }
     http.end();
   } else {
