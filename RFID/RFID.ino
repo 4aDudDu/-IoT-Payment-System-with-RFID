@@ -30,7 +30,7 @@ const char* api_key = "your_API_KEY";
 
 int currentMenu = 0;
 unsigned long previousMillis = 0;
-const long interval = 2000; // Interval pergantian menu 2 detik
+const long interval = 2000; 
 
 void setup() {
   Serial.begin(9600);
