@@ -3,8 +3,6 @@
 #include <LiquidCrystal_I2C.h>
 #include "Keypad.h"
 #include <WiFi.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 HardwareSerial RFID(2);
@@ -27,7 +25,7 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 String nilai = "";
 bool isInput = false;
 
-String api_key = ""; 
+String api_key = "9f95635c984407728822aa6c58ec3296ffac0c9f236ebaf13cc8fc89a8e92ee3";
 
 int currentMenu = 0;
 unsigned long previousMillis = 0;
@@ -62,7 +60,7 @@ void displayMenu(int menu) {
     lcd.setCursor(0, 0);
     lcd.print("1. Set WiFi");
     lcd.setCursor(0, 1);
-    lcd.print("2. Generated API");
+    lcd.print("2. ID");
   } else {
     lcd.setCursor(0, 0);
     lcd.print("3. Cek Saldo");
@@ -77,7 +75,7 @@ void handleMenuSelection(char key) {
       if (currentMenu == 0) settingWiFi();
       break;
     case '2':
-      if (currentMenu == 0) reconnectAPI();
+      if (currentMenu == 0) displayID();
       break;
     case '3':
       if (currentMenu == 1) cekSaldo();
@@ -212,66 +210,22 @@ String getPasswordInput() {
   }
 }
 
-void reconnectAPI() {
+void displayID() {
   lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Generated API...");
-
   if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin("https://oncard.id/app/api/device-manager/connect-device");
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-
-    // Mendapatkan MAC Address
-    String macAddress = WiFi.macAddress();
-    String postData = "mac_address=" + macAddress;
-    Serial.println("POST data: " + postData); 
-
-    int httpResponseCode = http.POST(postData);
-
-    lcd.clear();
-    if (httpResponseCode > 0) {
-      String response = http.getString();
-      Serial.println(httpResponseCode);
-      Serial.println(response);
-
-      // Parsing response
-      DynamicJsonDocument doc(1024);
-      DeserializationError error = deserializeJson(doc, response);
-      if (error) {
-        lcd.setCursor(0, 0);
-        lcd.print("JSON error");
-        Serial.print("deserializeJson() failed: ");
-        Serial.println(error.c_str());
-      } else {
-        String message = doc["message"];
-        Serial.println("Message from server: " + message); 
-        if (message == "Authorized") {
-          String newApiKey = doc["data"]["api_key"];
-          // Simpan API Key baru
-          lcd.setCursor(0, 0);
-          lcd.print("API Key updated!");
-          api_key = newApiKey;
-        } else {
-          lcd.setCursor(0, 0);
-          lcd.print("Authorization fail");
-          Serial.println("Authorization failed: " + message); 
-        }
-      }
-    } else {
-      lcd.setCursor(0, 0);
-      lcd.print("Failed!");
-      Serial.print("Error on sending POST request: ");
-      Serial.println(httpResponseCode);
-      Serial.println(http.errorToString(httpResponseCode));
-    }
-    http.end();
-  } else {
-    lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Not connected");
+    lcd.print("MAC Address:");
+    lcd.setCursor(0, 1);
+    lcd.print(WiFi.macAddress());
+    Serial.print("API Token: ");
+    Serial.println(api_key);
+  } else {
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi not conn.");
+    lcd.setCursor(0, 1);
+    lcd.print("API Failed");
   }
-  delay(2000);
+  delay(5000);
   displayMenu(currentMenu);
 }
 
