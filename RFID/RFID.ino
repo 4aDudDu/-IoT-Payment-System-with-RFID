@@ -4,7 +4,7 @@
 #include "Keypad.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <ArduinoJson.h> 
+#include <ArduinoJson.h>
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 HardwareSerial RFID(2);
@@ -31,7 +31,7 @@ String api_key = ""; // Belum ada API Key
 
 int currentMenu = 0;
 unsigned long previousMillis = 0;
-const long interval = 2000; 
+const long interval = 2000;
 
 void setup() {
   Serial.begin(9600);
@@ -224,7 +224,7 @@ void reconnectAPI() {
 
     // Mendapatkan MAC Address
     String macAddress = WiFi.macAddress();
-    String postData = "mac_address=" + macAddress; // Menghapus "api_key"
+    String postData = "mac_address=" + macAddress;
     Serial.println("POST data: " + postData); // Debugging: print the POST data
 
     int httpResponseCode = http.POST(postData);
@@ -245,6 +245,7 @@ void reconnectAPI() {
         Serial.println(error.c_str());
       } else {
         String message = doc["message"];
+        Serial.println("Message from server: " + message); // Debugging: print the message
         if (message == "Authorized") {
           String newApiKey = doc["data"]["api_key"];
           // Simpan API Key baru
