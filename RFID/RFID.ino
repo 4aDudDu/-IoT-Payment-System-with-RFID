@@ -188,7 +188,7 @@ String getPasswordInput() {
       if (input.length() > 0) {
         input.remove(input.length() - 1);
         lcd.setCursor(0, 1);
-        lcd.print("                "); // Clear previous input
+        lcd.print("                "); 
         lcd.setCursor(0, 1);
         lcd.print(input);
       }
