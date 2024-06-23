@@ -27,7 +27,7 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 String nilai = "";
 bool isInput = false;
 
-String api_key = "your_API_KEY";
+String api_key = ""; // Belum ada API Key
 
 int currentMenu = 0;
 unsigned long previousMillis = 0;
@@ -224,7 +224,9 @@ void reconnectAPI() {
 
     // Mendapatkan MAC Address
     String macAddress = WiFi.macAddress();
-    String postData = "api_key=" + String(api_key) + "&mac_address=" + macAddress;
+    String postData = "mac_address=" + macAddress; // Menghapus "api_key"
+    Serial.println("POST data: " + postData); // Debugging: print the POST data
+
     int httpResponseCode = http.POST(postData);
 
     lcd.clear();
@@ -252,6 +254,7 @@ void reconnectAPI() {
         } else {
           lcd.setCursor(0, 0);
           lcd.print("Authorization fail");
+          Serial.println("Authorization failed: " + message); // Debugging: print the message
         }
       }
     } else {
@@ -259,6 +262,7 @@ void reconnectAPI() {
       lcd.print("Failed!");
       Serial.print("Error on sending POST request: ");
       Serial.println(httpResponseCode);
+      Serial.println(http.errorToString(httpResponseCode)); // Debugging: print the error string
     }
     http.end();
   } else {
