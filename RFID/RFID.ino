@@ -2,7 +2,8 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "Keypad.h"
-#include <WiFi.h> 
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 HardwareSerial RFID(2);
@@ -24,6 +25,8 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 String nilai = "";
 bool isInput = false;
+
+const char* api_key = "your_API_KEY";
 
 void setup() {
   Serial.begin(9600);
@@ -200,7 +203,34 @@ void reconnectAPI() {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Reconnect API...");
-  // isian API
+
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin("https://oncard.id/app/api/device-manager/connect-device");
+    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+    String postData = "api_key=" + String(api_key);
+    int httpResponseCode = http.POST(postData);
+
+    lcd.clear();
+    if (httpResponseCode > 0) {
+      String response = http.getString();
+      lcd.setCursor(0, 0);
+      lcd.print("Success!");
+      Serial.println(httpResponseCode);
+      Serial.println(response);
+    } else {
+      lcd.setCursor(0, 0);
+      lcd.print("Failed!");
+      Serial.print("Error on sending POST request: ");
+      Serial.println(httpResponseCode);
+    }
+    http.end();
+  } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Not connected");
+  }
   delay(2000);
   displayMenu();
 }
