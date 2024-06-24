@@ -172,7 +172,7 @@ int getNetworkSelection(int numNetworks) {
       } else {
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("Invalid selection");
+        lcd.print("Salah Input!");
         delay(2000);
         lcd.clear();
         lcd.setCursor(0, 0);
@@ -206,6 +206,44 @@ String getInput() {
       }
     }
   }
+}
+
+
+String scanRFID() {
+  String cardData = "";
+  bool isCardScanned = false;
+  
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Menunggu...");
+  
+  while (RFID.available()) {
+    RFID.read();
+  }
+
+  delay(500);
+  
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Scan Kartu :");
+
+  while (!isCardScanned) {
+    if (RFID.available()) {
+      char c = RFID.read();
+      int value = int(c);
+
+      if (value == 2) {
+        cardData = "";
+      } else if (value == 3) {  
+        isCardScanned = true;
+      } else {
+        cardData += c;
+      }
+    }
+  }
+
+  
+  return cardData;
 }
 
 void cekSaldo() {
@@ -274,25 +312,24 @@ void cekSaldo() {
 }
 
 void transaksi() {
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Scan RFID");
   String card = scanRFID();
   Serial.println("Card ID: " + card);
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Enter PIN:");
+  lcd.print("PIN:");
   String pin = getInput();
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Enter Payment:");
+  lcd.print("Harga:");
   String payment = getInput();
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Confirm? 1:Yes 2:No");
+  lcd.print("Confirm?");
+  lcd.setCursor(0, 1); 
+  ("1:Yes 2:No");
 
   while (true) {
     char key = keypad.getKey();
@@ -302,29 +339,13 @@ void transaksi() {
     } else if (key == '2') {
       lcd.clear();
       lcd.setCursor(0, 0);
-      lcd.print("Cancelled");
+      lcd.print("Batal!");
       delay(2000);
       displayMenu(currentMenu);
       return;
     }
   }
 }
-
-String scanRFID() {
-  String cardData = "";
-  while (true) {
-    if (RFID.available() > 0) {
-      char c = (char)RFID.read();
-      if (c == '\n') {
-        break; 
-      }
-      cardData += c;
-    }
-  }
-  Serial.println("RFID Scanned: " + cardData);
-  return cardData;
-}
-
 
 void processTransaction(String card, String pin, String payment) {
   lcd.clear();
@@ -336,16 +357,15 @@ void processTransaction(String card, String pin, String payment) {
     http.begin(urlTransaksi);
     http.addHeader("Content-Type", "application/json");
     String httpRequestData = "{\"Qy\":\"" + api_key + "\", \"shop\":\"" + payment + "\", \"card\":\"" + card + "\", \"pin\":\"" + pin + "\", \"client_secret\":\"test\"}";
-    
-    Serial.println("HTTP Request Data: " + httpRequestData);  
+
+    Serial.println("HTTP Request Data: " + httpRequestData);
 
     int httpResponseCode = http.POST(httpRequestData);
 
     lcd.clear();
     if (httpResponseCode > 0) {
       String response = http.getString();
-      Serial.println("HTTP Response Code: " + String(httpResponseCode));  
-      Serial.println("HTTP Response: " + response);  
+      Serial.println("HTTP Response Code: " + String(httpResponseCode));
 
       DynamicJsonDocument doc(1024);
       DeserializationError error = deserializeJson(doc, response);
@@ -357,11 +377,13 @@ void processTransaction(String card, String pin, String payment) {
       } else {
         if (httpResponseCode == 200) {
           String total_payment = doc["transaction"]["total_payment"];
+          String balance = doc["balance"]["users"]["balance"];
           lcd.setCursor(0, 0);
-          lcd.print("Total Payment");
+          lcd.print("Hrg : "+total_payment);
           lcd.setCursor(0, 1);
-          lcd.print(total_payment);
+          lcd.print("Sisa : "+balance);
           Serial.println("Total Payment: " + total_payment);
+          Serial.println("Sisa Balance: " + balance);
         } else {
           String error_message = doc["message"];
           lcd.setCursor(0, 0);
@@ -385,4 +407,3 @@ void processTransaction(String card, String pin, String payment) {
   delay(2000);
   displayMenu(currentMenu);
 }
-
