@@ -101,7 +101,7 @@ void settingWiFi() {
   lcd.clear();
   if (n == 0) {
     lcd.setCursor(0, 0);
-    lcd.print("Tidak ada WIFI");
+    lcd.print("Tidak ada Wifi");
     delay(2000);
     displayMenu(currentMenu);
     return;
@@ -149,7 +149,7 @@ void settingWiFi() {
     lcd.print("Connected!");
   } else {
     lcd.setCursor(0, 0);
-    lcd.print("Gagal");
+    lcd.print("Failed");
   }
   delay(2000);
   displayMenu(currentMenu);
@@ -329,7 +329,7 @@ void transaksi() {
   lcd.setCursor(0, 0);
   lcd.print("Confirm?");
   lcd.setCursor(0, 1); 
-  ("1:Yes 2:No");
+  lcd.print("1:Yes 2:No");
 
   while (true) {
     char key = keypad.getKey();
@@ -387,7 +387,7 @@ void processTransaction(String card, String pin, String payment) {
         } else {
           String error_message = doc["message"];
           lcd.setCursor(0, 0);
-          lcd.print("Error: " + error_message);
+          lcd.print("Akun/Pin Salah!");
           Serial.println("Error: " + error_message);
         }
       }
@@ -402,7 +402,7 @@ void processTransaction(String card, String pin, String payment) {
   } else {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Not connected");
+    lcd.print("No Jaringan");
   }
   delay(2000);
   displayMenu(currentMenu);
