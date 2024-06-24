@@ -3,12 +3,17 @@
 #include <LiquidCrystal_I2C.h>
 #include "Keypad.h"
 #include <WiFi.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 HardwareSerial RFID(2);
 
 const byte ROWS = 4;
 const byte COLS = 4;
+
+String api_key = "9f95635c984407728822aa6c58ec3296ffac0c9f236ebaf13cc8fc89a8e92ee3";
+String urlTransaksi = "https://oncard.id/app/api/trx/v2";
 
 char keys[ROWS][COLS] = {
   { '1', '2', '3', 'A' },
@@ -24,8 +29,6 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 String nilai = "";
 bool isInput = false;
-
-String api_key = "9f95635c984407728822aa6c58ec3296ffac0c9f236ebaf13cc8fc89a8e92ee3";
 
 int currentMenu = 0;
 unsigned long previousMillis = 0;
@@ -60,12 +63,10 @@ void displayMenu(int menu) {
     lcd.setCursor(0, 0);
     lcd.print("1. Set WiFi");
     lcd.setCursor(0, 1);
-    lcd.print("2. ID");
+    lcd.print("2. Cek Saldo");
   } else {
     lcd.setCursor(0, 0);
-    lcd.print("3. Cek Saldo");
-    lcd.setCursor(0, 1);
-    lcd.print("4. Transaksi");
+    lcd.print("3. Transaksi");
   }
 }
 
@@ -75,12 +76,9 @@ void handleMenuSelection(char key) {
       if (currentMenu == 0) settingWiFi();
       break;
     case '2':
-      if (currentMenu == 0) displayID();
+      if (currentMenu == 0) cekSaldo();
       break;
     case '3':
-      if (currentMenu == 1) cekSaldo();
-      break;
-    case '4':
       if (currentMenu == 1) transaksi();
       break;
     default:
@@ -118,7 +116,7 @@ void settingWiFi() {
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("WIFI : ");
+  lcd.print("Masukan Pilihan Wifi");
   int selectedNetwork = getNetworkSelection(n);
 
   String ssid = WiFi.SSID(selectedNetwork);
@@ -129,9 +127,9 @@ void settingWiFi() {
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Password:");
+  lcd.print("password:");
 
-  String password = getPasswordInput();
+  String password = getInput();
 
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -139,7 +137,7 @@ void settingWiFi() {
   WiFi.begin(ssid.c_str(), password.c_str());
 
   int timeout = 0;
-  while (WiFi.status() != WL_CONNECTED && timeout < 20) { 
+  while (WiFi.status() != WL_CONNECTED && timeout < 20) {
     delay(500);
     lcd.print(".");
     timeout++;
@@ -174,18 +172,18 @@ int getNetworkSelection(int numNetworks) {
       } else {
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("Salah Input!");
+        lcd.print("Invalid selection");
         delay(2000);
         lcd.clear();
         lcd.setCursor(0, 0);
-        lcd.print("WIFI : ");
+        lcd.print("Masukan Pilihan:");
         input = "";
       }
     }
   }
 }
 
-String getPasswordInput() {
+String getInput() {
   String input = "";
   char key;
   while (true) {
@@ -202,7 +200,7 @@ String getPasswordInput() {
       if (input.length() > 0) {
         input.remove(input.length() - 1);
         lcd.setCursor(0, 1);
-        lcd.print("                "); 
+        lcd.print("                ");
         lcd.setCursor(0, 1);
         lcd.print(input);
       }
@@ -210,30 +208,67 @@ String getPasswordInput() {
   }
 }
 
-void displayID() {
-  lcd.clear();
-  if (WiFi.status() == WL_CONNECTED) {
-    lcd.setCursor(0, 0);
-    lcd.print("MAC Address:");
-    lcd.setCursor(0, 1);
-    lcd.print(WiFi.macAddress());
-    Serial.print("API Token: ");
-    Serial.println(api_key);
-  } else {
-    lcd.setCursor(0, 0);
-    lcd.print("WiFi not conn.");
-    lcd.setCursor(0, 1);
-    lcd.print("API Failed");
-  }
-  delay(5000);
-  displayMenu(currentMenu);
-}
-
 void cekSaldo() {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Cek Saldo...");
+
   // isian saldo
+  // if (WiFi.status() == WL_CONNECTED) {
+  //   HTTPClient http;
+  //   http.begin(urlTransaksi);
+  //   http.addHeader("Content-Type", "application/json");
+  //   String httpRequestData = "{\"Qy\":\"" + api_key + "\", \"shop\":\"25000\", \"card\":\"" + card + "\", \"pin\":\"123456\", \"client_secret\":\"test\"}";
+
+  //   // Mendapatkan MAC Address
+  //   String macAddress = WiFi.macAddress();
+  //   String postData = "mac_address=" + macAddress;
+  //   Serial.println("POST data: " + postData);
+
+  //   int httpResponseCode = http.POST(httpRequestData);
+
+  //   lcd.clear();
+  //   if (httpResponseCode > 0) {
+  //     String response = http.getString();
+  //     Serial.println(httpResponseCode);
+
+  //     // Parsing response
+  //     DynamicJsonDocument doc(1024);
+  //     DeserializationError error = deserializeJson(doc, response);
+  //     if (error) {
+  //       lcd.setCursor(0, 0);
+  //       lcd.print("JSON error");
+  //       Serial.print("deserializeJson() failed: ");
+  //       Serial.println(error.c_str());
+  //     } else {
+  //       if (httpResponseCode == 200) {
+  //         String balance = doc["balance"]["users"]["balance"];
+  //         lcd.setCursor(0, 0);
+  //         lcd.print("Balance");
+  //         lcd.setCursor(0, 1);
+  //         lcd.print(balance);
+  //         Serial.println("Balance : " + balance);
+  //       } else {
+  //         lcd.setCursor(0, 0);
+  //         lcd.print("Error (" + String(httpResponseCode) + ")");
+  //         lcd.setCursor(0, 1);
+  //         lcd.print(http.errorToString(httpResponseCode));
+  //         Serial.println("Error Code : " + String(httpResponseCode));
+  //       }
+  //     }
+  //   } else {
+  //     lcd.setCursor(0, 0);
+  //     lcd.print("Failed!");
+  //     Serial.print("Error on sending POST request: ");
+  //     Serial.println(String(httpResponseCode));
+  //     Serial.println(http.errorToString(httpResponseCode));  // Debugging: print the error string
+  //   }
+  //   http.end();
+  // } else {
+  //   lcd.clear();
+  //   lcd.setCursor(0, 0);
+  //   lcd.print("Not connected");
+  // }
   delay(2000);
   displayMenu(currentMenu);
 }
@@ -241,8 +276,113 @@ void cekSaldo() {
 void transaksi() {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Transaksi...");
-  // isian transaksi
+  lcd.print("Scan RFID");
+  String card = scanRFID();
+  Serial.println("Card ID: " + card);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Enter PIN:");
+  String pin = getInput();
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Enter Payment:");
+  String payment = getInput();
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Confirm? 1:Yes 2:No");
+
+  while (true) {
+    char key = keypad.getKey();
+    if (key == '1') {
+      processTransaction(card, pin, payment);
+      break;
+    } else if (key == '2') {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Cancelled");
+      delay(2000);
+      displayMenu(currentMenu);
+      return;
+    }
+  }
+}
+
+String scanRFID() {
+  String cardData = "";
+  while (true) {
+    if (RFID.available() > 0) {
+      char c = (char)RFID.read();
+      if (c == '\n') {
+        break; 
+      }
+      cardData += c;
+    }
+  }
+  Serial.println("RFID Scanned: " + cardData);
+  return cardData;
+}
+
+
+void processTransaction(String card, String pin, String payment) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Processing...");
+
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(urlTransaksi);
+    http.addHeader("Content-Type", "application/json");
+    String httpRequestData = "{\"Qy\":\"" + api_key + "\", \"shop\":\"" + payment + "\", \"card\":\"" + card + "\", \"pin\":\"" + pin + "\", \"client_secret\":\"test\"}";
+    
+    Serial.println("HTTP Request Data: " + httpRequestData);  // Debugging output
+
+    int httpResponseCode = http.POST(httpRequestData);
+
+    lcd.clear();
+    if (httpResponseCode > 0) {
+      String response = http.getString();
+      Serial.println("HTTP Response Code: " + String(httpResponseCode));  // Debugging output
+      Serial.println("HTTP Response: " + response);  // Debugging output
+
+      DynamicJsonDocument doc(1024);
+      DeserializationError error = deserializeJson(doc, response);
+      if (error) {
+        lcd.setCursor(0, 0);
+        lcd.print("JSON error");
+        Serial.print("deserializeJson() failed: ");
+        Serial.println(error.c_str());
+      } else {
+        if (httpResponseCode == 200) {
+          String total_payment = doc["transaction"]["total_payment"];
+          lcd.setCursor(0, 0);
+          lcd.print("Total Payment");
+          lcd.setCursor(0, 1);
+          lcd.print(total_payment);
+          Serial.println("Total Payment: " + total_payment);
+        } else {
+          String error_message = doc["message"];
+          lcd.setCursor(0, 0);
+          lcd.print("Error: " + error_message);
+          Serial.println("Error: " + error_message);
+        }
+      }
+    } else {
+      lcd.setCursor(0, 0);
+      lcd.print("Failed!");
+      Serial.print("Error on sending POST request: ");
+      Serial.println(String(httpResponseCode));
+      Serial.println(http.errorToString(httpResponseCode));
+    }
+    http.end();
+  } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Not connected");
+  }
   delay(2000);
   displayMenu(currentMenu);
 }
+
