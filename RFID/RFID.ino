@@ -337,15 +337,15 @@ void processTransaction(String card, String pin, String payment) {
     http.addHeader("Content-Type", "application/json");
     String httpRequestData = "{\"Qy\":\"" + api_key + "\", \"shop\":\"" + payment + "\", \"card\":\"" + card + "\", \"pin\":\"" + pin + "\", \"client_secret\":\"test\"}";
     
-    Serial.println("HTTP Request Data: " + httpRequestData);  // Debugging output
+    Serial.println("HTTP Request Data: " + httpRequestData);  
 
     int httpResponseCode = http.POST(httpRequestData);
 
     lcd.clear();
     if (httpResponseCode > 0) {
       String response = http.getString();
-      Serial.println("HTTP Response Code: " + String(httpResponseCode));  // Debugging output
-      Serial.println("HTTP Response: " + response);  // Debugging output
+      Serial.println("HTTP Response Code: " + String(httpResponseCode));  
+      Serial.println("HTTP Response: " + response);  
 
       DynamicJsonDocument doc(1024);
       DeserializationError error = deserializeJson(doc, response);
